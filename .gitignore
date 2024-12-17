@@ -1,7 +1,7 @@
 /*.source
 /venv/
-/src/hedera/generated.py
-/src/hedera/*.jar
+#/src/hedera/generated.py
+#/src/hedera/*.jar
 *.swp
 
 # Byte-compiled / optimized / DLL files
