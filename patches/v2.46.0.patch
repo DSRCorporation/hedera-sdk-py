@@ -1,0 +1,79 @@
+diff --git a/sdk/build.gradle.kts b/sdk/build.gradle.kts
+index 1c6229fcc..e9c0d5a45 100644
+--- a/sdk/build.gradle.kts
++++ b/sdk/build.gradle.kts
+@@ -22,6 +22,11 @@ plugins {
+     id("com.hedera.gradle.sdk")
+ }
+ 
++dependencies {
++    api("io.grpc:grpc-netty-shaded:1.64.0")
++    api("ch.qos.logback:logback-classic:1.4.11")
++}
++
+ // Define dependency constraints for gRPC implementations so that clients automatically get the correct version
+ dependencies.constraints {
+     api("io.grpc:grpc-netty:1.64.0")
+@@ -39,10 +44,18 @@ testModuleInfo {
+     requiresStatic("java.annotation")
+ 
+     runtimeOnly("io.grpc.netty.shaded")
+-    runtimeOnly("org.slf4j.simple")
+ }
+ 
+ testIntegrationModuleInfo {
+     runtimeOnly("io.grpc.netty.shaded")
+-    runtimeOnly("org.slf4j.simple")
++}
++
++tasks.jar {
++    val dependencies = configurations
++        .runtimeClasspath
++        .get()
++        .map(::zipTree)
++    from(dependencies)
++    duplicatesStrategy = DuplicatesStrategy.INCLUDE
++    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+ }
+diff --git a/sdk/src/main/resources/logback.xml b/sdk/src/main/resources/logback.xml
+new file mode 100644
+index 000000000..e15bfe9a3
+--- /dev/null
++++ b/sdk/src/main/resources/logback.xml
+@@ -0,0 +1,11 @@
++<configuration>
++    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
++        <encoder>
++            <pattern>${LOG_PATTERN:-%d %level: %logger: %msg%n}</pattern>
++        </encoder>
++    </appender>
++
++    <root level="${LOG_LEVEL:-info}">
++        <appender-ref ref="CONSOLE" />
++    </root>
++</configuration>
+diff --git a/sdk/src/main/java/com/hedera/hashgraph/sdk/TopicMessageQuery.java b/sdk/src/main/java/com/hedera/hashgraph/sdk/TopicMessageQuery.java
+index 6a9b15107..3022bcae8 100644
+--- a/sdk/src/main/java/com/hedera/hashgraph/sdk/TopicMessageQuery.java
++++ b/sdk/src/main/java/com/hedera/hashgraph/sdk/TopicMessageQuery.java
+@@ -51,6 +51,11 @@ public final class TopicMessageQuery {
+
+     private static final Logger LOGGER = LoggerFactory.getLogger(TopicMessageQuery.class);
+
++    // A workaround for error handler callback and Python interop
++    // We can't pass 'null' to Python side without causing memory access issues, but we can't omit the argument completely
++    // Very basic workaround is to create some stub value and pass it to Python (it's not functionally used anyway)
++    private static final TopicMessage STUB_TOPIC_MESSAGE = new TopicMessage(Instant.now(), new byte[1], new byte[1], 0, null, null);
++
+     private final ConsensusTopicQuery.Builder builder;
+     private Runnable completionHandler = this::onComplete;
+     private BiConsumer<Throwable, TopicMessage> errorHandler = this::onError;
+@@ -332,7 +337,7 @@ public final class TopicMessageQuery {
+             @Override
+             public void onError(Throwable t) {
+                 if (attempt >= maxAttempts || !retryHandler.test(t)) {
+-                    errorHandler.accept(t, null);
++                    errorHandler.accept(t, STUB_TOPIC_MESSAGE);
+                     return;
+                 }
+

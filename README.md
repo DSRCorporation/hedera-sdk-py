@@ -1,7 +1,7 @@
 # hedera-sdk-py
 [Hedera](https://hedera.com/) SDK in Python
 
-This is basically a python wrapper of [Hedera SDK in Java](https://github.com/hashgraph/hedera-sdk-java).
+This is essentially a Python wrapper over [Hedera SDK in Java](https://github.com/hashgraph/hedera-sdk-java).
 
 ## Install
 
@@ -15,7 +15,7 @@ pip install hedera-sdk-py
   - Go to Java SDK directory and apply most recent patch:
   ```sh
   cd ./hedera-sdk-java
-  git apply ../patches/v2.43.0.patch
+  git apply ../patches/v2.46.0.patch
   ```
   - Build JAR
   ```sh

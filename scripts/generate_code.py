@@ -71,7 +71,7 @@ fw.write("""
 
 @dataclass(frozen=True)
 class MirrorResponse:
-    timestamp: str
+    timestamp: JInstant
     sequence_number: float
     contents: str
 
@@ -83,7 +83,7 @@ class PyConsumer(PythonJavaClass):
 
     @java_method('(Ljava/lang/Object;)V')
     def accept(self, msg) -> MirrorResponse:
-        timestamp = msg.consensusTimestamp.toString()
+        timestamp = msg.consensusTimestamp
         sequence_number = msg.sequenceNumber
         contents = JString(msg.contents, JStandardCharsets.UTF_8).toString()
         self.fn(MirrorResponse(timestamp, sequence_number, contents))
